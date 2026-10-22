@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Keitaro Campaign Creator</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; color: #1a1a1a; }
+  h1 { font-size: 22px; }
+  form { display: grid; gap: 12px; margin-bottom: 32px; }
+  label { font-weight: 600; font-size: 14px; }
+  input { padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; }
+  button { padding: 10px; font-size: 14px; border: none; border-radius: 6px; background: #2563eb; color: white; cursor: pointer; }
+  button:disabled { background: #93b4ef; cursor: not-allowed; }
+  #result { white-space: pre-wrap; padding: 12px; border-radius: 6px; font-size: 13px; margin-bottom: 24px; }
+  #result.error { background: #fee2e2; color: #991b1b; }
+  #result.success { background: #dcfce7; color: #166534; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; }
+  th { color: #555; }
+</style>
+</head>
+<body>
+
+<h1>Создать кампанию Keitaro</h1>
+<form id="create-form">
+  <div>
+    <label for="name">Название кампании</label><br>
+    <input id="name" name="name" type="text" required placeholder="Summer promo">
+  </div>
+  <div>
+    <label for="country_code">Гео (ISO код страны, напр. US)</label><br>
+    <input id="country_code" name="country_code" type="text" required maxlength="2" pattern="[A-Za-z]{2}" placeholder="US">
+  </div>
+  <div>
+    <label for="offer_id">ID оффера Keitaro</label><br>
+    <input id="offer_id" name="offer_id" type="number" required placeholder="123">
+  </div>
+  <button type="submit" id="submit-btn">Создать кампанию</button>
+</form>
+
+<div id="result" style="display:none"></div>
+
+<h2>История созданных кампаний</h2>
+<table>
+  <thead>
+    <tr><th>ID</th><th>Название</th><th>Гео</th><th>Offer ID</th><th>Создана</th></tr>
+  </thead>
+  <tbody id="history-body"></tbody>
+</table>
+
+<script src="app.js"></script>
+</body>
+</html>
