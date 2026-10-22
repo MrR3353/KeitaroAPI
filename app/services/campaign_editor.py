@@ -1,9 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.keitaro_client import KeitaroAPIError, KeitaroClient
-from app.models import CampaignStream, CampaignStreamOffer, CreatedCampaign
-
-ACTIVE_STATUSES = ("active", "pending_add")
+from app.models import ACTIVE_OFFER_STATUSES, CampaignStream, CampaignStreamOffer, CreatedCampaign
 
 
 class CampaignEditorError(Exception):
@@ -36,9 +34,8 @@ def _get_stream_offer(db: Session, stream_offer_id: int) -> CampaignStreamOffer:
 
 
 def _recalculate_weights(stream: CampaignStream) -> None:
-    stream.pending_changes = True
-    contributing = [o for o in stream.offers if o.status in ACTIVE_STATUSES]
-    inactive = [o for o in stream.offers if o.status not in ACTIVE_STATUSES]
+    contributing = [o for o in stream.offers if o.status in ACTIVE_OFFER_STATUSES]
+    inactive = [o for o in stream.offers if o.status not in ACTIVE_OFFER_STATUSES]
     for row in inactive:
         row.weight = 0
 
@@ -48,13 +45,11 @@ def _recalculate_weights(stream: CampaignStream) -> None:
     pinned_sum = sum(o.weight for o in pinned)
     remaining = max(0, 100 - pinned_sum)
 
-    if not unpinned:
-        return
-
-    base = remaining // len(unpinned)
-    remainder = remaining - base * len(unpinned)
-    for index, row in enumerate(unpinned):
-        row.weight = base + (1 if index < remainder else 0)
+    if unpinned:
+        base = remaining // len(unpinned)
+        remainder = remaining - base * len(unpinned)
+        for index, row in enumerate(unpinned):
+            row.weight = base + (1 if index < remainder else 0)
 
 
 async def _fetch_offer_name(client: KeitaroClient, offer_id: int) -> str:
@@ -154,6 +149,9 @@ async def _reconcile_stream_offers(
         elif row.status == "active":
             row.weight = int(kt_offer.get("share") or row.weight)
 
+    stream.last_synced_offers = {
+        str(int(o["offer_id"])): int(o.get("share") or 0) for o in kt_offers
+    }
     db.flush()
 
 
@@ -230,7 +228,9 @@ def bring_back_offer(db: Session, stream_offer_id: int) -> CampaignStream:
     if row.status not in ("pending_remove", "removed"):
         raise CampaignEditorError(f"Offer in status '{row.status}' cannot be brought back")
 
-    row.status = "pending_add"
+    # pending_remove was never actually pushed to Keitaro, so undoing it goes straight back
+    # to active; removed was confirmed gone from Keitaro, so it needs a fresh add-push.
+    row.status = "active" if row.status == "pending_remove" else "pending_add"
     stream = row.stream
     db.flush()
     _recalculate_weights(stream)
@@ -252,7 +252,7 @@ def toggle_pin(db: Session, stream_offer_id: int, pinned: bool) -> CampaignStrea
 
 async def push_to_kt(db: Session, stream_id: int) -> CampaignStream:
     stream = _get_stream(db, stream_id)
-    contributing = [o for o in stream.offers if o.status in ACTIVE_STATUSES]
+    contributing = [o for o in stream.offers if o.status in ACTIVE_OFFER_STATUSES]
     payload_offers = [{"offer_id": o.offer_id, "share": o.weight} for o in contributing]
 
     client = KeitaroClient()
@@ -264,7 +264,7 @@ async def push_to_kt(db: Session, stream_id: int) -> CampaignStream:
         elif row.status == "pending_remove":
             row.status = "removed"
 
-    stream.pending_changes = False
+    stream.last_synced_offers = {str(o["offer_id"]): o["share"] for o in payload_offers}
     db.commit()
     db.refresh(stream)
     return stream
