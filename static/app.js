@@ -43,9 +43,22 @@ form.addEventListener("submit", async (event) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const data = await res.json();
+
+    const text = await res.text();
+    let data;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = null;
+    }
+
     if (!res.ok) {
-      throw new Error(typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail));
+      const message = data && typeof data.detail === "string"
+        ? data.detail
+        : data && data.detail
+          ? JSON.stringify(data.detail)
+          : "Внутренняя ошибка сервера";
+      throw new Error(message);
     }
     showResult(`Готово! Campaign ID: ${data.keitaro_campaign_id}, alias: ${data.alias}`, false);
     form.reset();

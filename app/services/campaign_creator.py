@@ -1,6 +1,3 @@
-import re
-import secrets
-
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
@@ -15,11 +12,6 @@ _COUNTRY_FILTER_CANDIDATES = ["country_code", "country"]
 
 class CampaignCreationError(Exception):
     pass
-
-
-def _slugify(name: str) -> str:
-    slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
-    return (slug or "campaign") + "-" + secrets.token_hex(3)
 
 
 async def _resolve_country_filter_name(client: KeitaroClient) -> str:
@@ -58,14 +50,14 @@ async def create_campaign(db: Session, request: CampaignCreateRequest) -> Create
 
     country_filter_name = await _resolve_country_filter_name(client)
     domain_id = await _resolve_domain_id(client)
-    alias = _slugify(request.name)
+    alias = request.name
 
     group = None
     source = None
     campaign = None
     try:
-        group = await client.create_group(name=request.name, group_type="campaigns")
-        source = await client.create_traffic_source(name=request.name)
+        group = (await client.list_groups())[0]
+        source = (await client.list_traffic_sources())[0]
 
         campaign_payload = {
             "name": request.name,

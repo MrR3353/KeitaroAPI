@@ -48,6 +48,9 @@ class KeitaroClient:
 
     # Groups
 
+    async def list_groups(self, group_type: str = "campaigns") -> list[dict]:
+        return await self._request("GET", "/groups", params={"type": group_type})
+
     async def create_group(self, name: str, group_type: str = "campaigns") -> dict:
         return await self._request("POST", "/groups", json={"name": name, "type": group_type})
 
@@ -55,6 +58,9 @@ class KeitaroClient:
         await self._request("DELETE", f"/groups/{group_id}/delete")
 
     # Traffic sources
+
+    async def list_traffic_sources(self) -> list[dict]:
+        return await self._request("GET", "/traffic_sources")
 
     async def create_traffic_source(self, name: str) -> dict:
         return await self._request("POST", "/traffic_sources", json={"name": name})
