@@ -51,19 +51,20 @@ async def create_campaign(db: Session, request: CampaignCreateRequest) -> Create
     country_filter_name = await _resolve_country_filter_name(client)
     domain_id = await _resolve_domain_id(client)
     alias = request.name
-
-    group = None
-    source = None
     campaign = None
+
     try:
-        group = (await client.list_groups())[0]
-        source = (await client.list_traffic_sources())[0]
+        existing_groups = await client.list_groups()
+        group_id = existing_groups[0]["id"] if existing_groups else None
+
+        existing_traffic_sources = await client.list_traffic_sources()
+        traffic_source_id = existing_traffic_sources[0]["id"] if existing_traffic_sources else None
 
         campaign_payload = {
             "name": request.name,
             "alias": alias,
-            "group_id": group["id"],
-            "traffic_source_id": source["id"],
+            "group_id": group_id,
+            "traffic_source_id": traffic_source_id,
         }
         if domain_id is not None:
             campaign_payload["domain_id"] = domain_id
@@ -104,10 +105,6 @@ async def create_campaign(db: Session, request: CampaignCreateRequest) -> Create
     except Exception:
         if campaign is not None:
             await _safe_cleanup(client.delete_campaign(campaign["id"]))
-        if source is not None:
-            await _safe_cleanup(client.delete_traffic_source(source["id"]))
-        if group is not None:
-            await _safe_cleanup(client.delete_group(group["id"]))
         raise
 
     record = CreatedCampaign(
@@ -117,8 +114,8 @@ async def create_campaign(db: Session, request: CampaignCreateRequest) -> Create
         country_code=request.country_code,
         offer_id=request.offer_id,
         domain_id=domain_id,
-        group_id=group["id"],
-        traffic_source_id=source["id"],
+        group_id=group_id,
+        traffic_source_id=traffic_source_id,
         geo_stream_id=geo_stream["id"],
         offer_stream_id=offer_stream["id"],
     )

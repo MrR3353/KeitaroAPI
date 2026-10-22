@@ -22,8 +22,8 @@ class CampaignCreateResponse(BaseModel):
     country_code: str
     offer_id: int
     domain_id: int | None
-    group_id: int
-    traffic_source_id: int
+    group_id: int | None
+    traffic_source_id: int | None
     geo_stream_id: int
     offer_stream_id: int
     created_at: datetime

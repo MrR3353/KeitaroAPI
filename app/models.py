@@ -18,8 +18,8 @@ class CreatedCampaign(Base):
     offer_id: Mapped[int] = mapped_column(Integer)
 
     domain_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    group_id: Mapped[int] = mapped_column(Integer)
-    traffic_source_id: Mapped[int] = mapped_column(Integer)
+    group_id: Mapped[int] = mapped_column(Integer, nullable=True)
+    traffic_source_id: Mapped[int] = mapped_column(Integer, nullable=True)
 
     geo_stream_id: Mapped[int] = mapped_column(Integer)
     offer_stream_id: Mapped[int] = mapped_column(Integer)
