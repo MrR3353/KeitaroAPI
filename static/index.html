@@ -19,6 +19,10 @@
   th { color: #555; }
   tbody tr { cursor: pointer; }
   tbody tr:hover { background: #f3f4f6; }
+  .offer-search-wrap { position: relative; display: inline-block; }
+  .offer-suggestions { position: absolute; top: calc(100% + 4px); left: 0; width: 100%; background: white; border: 1px solid #ccc; border-radius: 6px; max-height: 220px; overflow-y: auto; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+  .offer-suggestions div { padding: 6px 10px; cursor: pointer; font-size: 13px; }
+  .offer-suggestions div:hover { background: #f3f4f6; }
 </style>
 </head>
 <body>
@@ -34,8 +38,8 @@
     <input id="country_code" name="country_code" type="text" required maxlength="2" pattern="[A-Za-z]{2}" placeholder="US">
   </div>
   <div>
-    <label for="offer_id">Keitaro offer ID</label><br>
-    <input id="offer_id" name="offer_id" type="number" required placeholder="123">
+    <label for="offer_id">Keitaro offer</label><br>
+    <input id="offer_id" name="offer_id" type="text" required placeholder="Offer ID or name...">
   </div>
   <button type="submit" id="submit-btn">Create campaign</button>
 </form>
@@ -50,6 +54,7 @@
   <tbody id="history-body"></tbody>
 </table>
 
+<script src="offer-search.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

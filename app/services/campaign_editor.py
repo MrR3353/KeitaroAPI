@@ -36,6 +36,7 @@ def _get_stream_offer(db: Session, stream_offer_id: int) -> CampaignStreamOffer:
 
 
 def _recalculate_weights(stream: CampaignStream) -> None:
+    stream.pending_changes = True
     contributing = [o for o in stream.offers if o.status in ACTIVE_STATUSES]
     inactive = [o for o in stream.offers if o.status not in ACTIVE_STATUSES]
     for row in inactive:
@@ -151,10 +152,9 @@ async def _reconcile_stream_offers(
             stream.offers.append(row)
             existing_by_offer_id[offer_id] = row
         elif row.status == "active":
-            row.weight = int(kt_offer.get("share", row.weight))
+            row.weight = int(kt_offer.get("share") or row.weight)
 
     db.flush()
-    _recalculate_weights(stream)
 
 
 async def add_offer_to_stream(db: Session, stream_id: int, offer_id: int) -> CampaignStream:
@@ -264,6 +264,7 @@ async def push_to_kt(db: Session, stream_id: int) -> CampaignStream:
         elif row.status == "pending_remove":
             row.status = "removed"
 
+    stream.pending_changes = False
     db.commit()
     db.refresh(stream)
     return stream

@@ -2,6 +2,7 @@ const form = document.getElementById("create-form");
 const submitBtn = document.getElementById("submit-btn");
 const resultBox = document.getElementById("result");
 const historyBody = document.getElementById("history-body");
+const offerSearch = setupOfferSearch(document.getElementById("offer_id"));
 
 function showResult(message, isError) {
   resultBox.style.display = "block";
@@ -37,10 +38,17 @@ form.addEventListener("submit", async (event) => {
   submitBtn.disabled = true;
   resultBox.style.display = "none";
 
+  const offerId = offerSearch.getSelectedId();
+  if (!offerId) {
+    showResult("Pick an offer from the suggestions list, or type a numeric offer ID.", true);
+    submitBtn.disabled = false;
+    return;
+  }
+
   const payload = {
     name: document.getElementById("name").value,
     country_code: document.getElementById("country_code").value,
-    offer_id: Number(document.getElementById("offer_id").value),
+    offer_id: offerId,
   };
 
   try {
@@ -68,6 +76,7 @@ form.addEventListener("submit", async (event) => {
     }
     showResult(`Done! Campaign ID: ${data.keitaro_campaign_id}, alias: ${data.alias}`, false);
     form.reset();
+    offerSearch.clear();
     await loadHistory();
   } catch (err) {
     showResult(`Error: ${err.message}`, true);

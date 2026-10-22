@@ -48,6 +48,7 @@ class StreamOut(BaseModel):
     name: str
     position: int
     kt_schema: str
+    pending_changes: bool
     offers: list[StreamOfferOut]
 
     model_config = {"from_attributes": True}

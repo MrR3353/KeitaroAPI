@@ -43,6 +43,8 @@ class CampaignStream(Base):
     name: Mapped[str] = mapped_column(String(255))
     position: Mapped[int] = mapped_column(Integer)
     kt_schema: Mapped[str] = mapped_column(String(50))
+    # True whenever local offers/weights differ from what was last pushed to Keitaro.
+    pending_changes: Mapped[bool] = mapped_column(Boolean, default=False)
 
     campaign: Mapped["CreatedCampaign"] = relationship(back_populates="streams")
     offers: Mapped[list["CampaignStreamOffer"]] = relationship(

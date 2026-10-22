@@ -14,18 +14,11 @@ const STATUS_LABELS = {
 };
 
 let campaign = null;
-let searchDebounceTimer = null;
 
 function showResult(message, isError) {
   resultEl.style.display = "block";
   resultEl.className = isError ? "error" : "success";
   resultEl.textContent = message;
-}
-
-function escapeHtml(value) {
-  const div = document.createElement("div");
-  div.textContent = value ?? "";
-  return div.innerHTML;
 }
 
 async function api(path, options) {
@@ -72,8 +65,13 @@ function replaceStream(updatedStream) {
   render();
 }
 
+function hasPendingChanges() {
+  return campaign.streams.some((s) => s.pending_changes);
+}
+
 function render() {
   titleEl.textContent = `${campaign.name} (KT #${campaign.keitaro_campaign_id})`;
+  pushAllBtn.disabled = !hasPendingChanges();
   streamsEl.innerHTML = "";
   campaign.streams
     .slice()
@@ -88,7 +86,7 @@ function render() {
 
 function renderStream(stream) {
   const card = document.createElement("div");
-  card.className = "stream-card";
+  card.className = stream.pending_changes ? "stream-card stream-card-dirty" : "stream-card";
 
   const header = document.createElement("div");
   header.className = "stream-header";
@@ -97,6 +95,7 @@ function renderStream(stream) {
       <h2>${escapeHtml(stream.name)}</h2>
       <div class="stream-meta">position ${stream.position} &middot; schema: ${escapeHtml(stream.kt_schema)}</div>
     </div>
+    ${stream.pending_changes ? '<span class="status-badge dirty-badge">Not pushed to KT</span>' : ""}
   `;
   card.appendChild(header);
 
@@ -151,52 +150,16 @@ function renderAddOfferRow(stream) {
   const input = document.createElement("input");
   input.type = "text";
   input.placeholder = "Offer ID or name...";
-
-  const suggestions = document.createElement("div");
-  suggestions.className = "suggestions";
-  suggestions.style.display = "none";
-
-  let selectedOfferId = null;
-
-  input.addEventListener("input", () => {
-    selectedOfferId = null;
-    const query = input.value.trim();
-    clearTimeout(searchDebounceTimer);
-    if (!query) {
-      suggestions.style.display = "none";
-      suggestions.innerHTML = "";
-      return;
-    }
-    searchDebounceTimer = setTimeout(async () => {
-      try {
-        const results = await api(`/api/offers/search?q=${encodeURIComponent(query)}`);
-        suggestions.innerHTML = results
-          .map((o) => `<div data-id="${o.id}" data-name="${escapeHtml(o.name)}">#${o.id} — ${escapeHtml(o.name)}</div>`)
-          .join("");
-        suggestions.style.display = results.length ? "block" : "none";
-      } catch {
-        suggestions.style.display = "none";
-      }
-    }, 250);
-  });
-
-  suggestions.addEventListener("click", (event) => {
-    const target = event.target.closest("[data-id]");
-    if (!target) return;
-    selectedOfferId = Number(target.dataset.id);
-    input.value = `#${target.dataset.id} — ${target.dataset.name}`;
-    suggestions.style.display = "none";
-  });
-
-  document.addEventListener("click", (event) => {
-    if (!wrap.contains(event.target)) suggestions.style.display = "none";
-  });
+  wrap.appendChild(input);
 
   const addBtn = document.createElement("button");
   addBtn.textContent = "Add offer";
+  wrap.appendChild(addBtn);
+
+  const offerSearch = setupOfferSearch(input);
+
   addBtn.addEventListener("click", async () => {
-    const typed = input.value.trim();
-    const offerId = selectedOfferId ?? (/^\d+$/.test(typed) ? Number(typed) : null);
+    const offerId = offerSearch.getSelectedId();
     if (!offerId) {
       showResult("Pick an offer from the suggestions list, or type a numeric offer ID.", true);
       return;
@@ -217,9 +180,6 @@ function renderAddOfferRow(stream) {
     }
   });
 
-  wrap.appendChild(input);
-  wrap.appendChild(addBtn);
-  wrap.appendChild(suggestions);
   return wrap;
 }
 
@@ -264,9 +224,7 @@ async function bringBackOffer(offer) {
 }
 
 async function pushAll() {
-  const streamsWithChanges = campaign.streams.filter((s) =>
-    s.offers.some((o) => o.status === "pending_add" || o.status === "pending_remove")
-  );
+  const streamsWithChanges = campaign.streams.filter((s) => s.pending_changes);
 
   if (streamsWithChanges.length === 0) {
     showResult("No pending changes to push.", false);
@@ -287,7 +245,6 @@ async function pushAll() {
     showResult(`Error after pushing ${pushedCount}/${streamsWithChanges.length} stream(s): ${err.message}`, true);
   } finally {
     render();
-    pushAllBtn.disabled = false;
   }
 }
 
