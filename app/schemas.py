@@ -29,3 +29,42 @@ class CampaignCreateResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class StreamOfferOut(BaseModel):
+    id: int
+    offer_id: int
+    offer_name: str
+    weight: int
+    pinned: bool
+    status: str
+
+    model_config = {"from_attributes": True}
+
+
+class StreamOut(BaseModel):
+    id: int
+    keitaro_stream_id: int
+    name: str
+    position: int
+    kt_schema: str
+    offers: list[StreamOfferOut]
+
+    model_config = {"from_attributes": True}
+
+
+class CampaignDetailOut(CampaignCreateResponse):
+    streams: list[StreamOut]
+
+
+class OfferSearchResult(BaseModel):
+    id: int
+    name: str
+
+
+class AddOfferRequest(BaseModel):
+    offer_id: int
+
+
+class PinRequest(BaseModel):
+    pinned: bool

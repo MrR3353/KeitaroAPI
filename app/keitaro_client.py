@@ -41,6 +41,9 @@ class KeitaroClient:
     async def get_offer(self, offer_id: int) -> dict:
         return await self._request("GET", f"/offers/{offer_id}")
 
+    async def list_offers(self) -> list[dict]:
+        return await self._request("GET", "/offers")
+
     # Domains
 
     async def list_domains(self) -> list[dict]:

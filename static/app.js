@@ -15,7 +15,7 @@ async function loadHistory() {
   historyBody.innerHTML = items
     .map(
       (item) => `
-        <tr>
+        <tr data-id="${item.id}" title="Open editor">
           <td>${item.keitaro_campaign_id}</td>
           <td>${item.name}</td>
           <td>${item.country_code}</td>
@@ -24,6 +24,12 @@ async function loadHistory() {
         </tr>`
     )
     .join("");
+
+  historyBody.querySelectorAll("tr[data-id]").forEach((row) => {
+    row.addEventListener("click", () => {
+      window.location.href = `editor.html?id=${row.dataset.id}`;
+    });
+  });
 }
 
 form.addEventListener("submit", async (event) => {
