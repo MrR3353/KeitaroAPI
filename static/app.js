@@ -57,14 +57,14 @@ form.addEventListener("submit", async (event) => {
         ? data.detail
         : data && data.detail
           ? JSON.stringify(data.detail)
-          : "Внутренняя ошибка сервера";
+          : "Internal server error";
       throw new Error(message);
     }
-    showResult(`Готово! Campaign ID: ${data.keitaro_campaign_id}, alias: ${data.alias}`, false);
+    showResult(`Done! Campaign ID: ${data.keitaro_campaign_id}, alias: ${data.alias}`, false);
     form.reset();
     await loadHistory();
   } catch (err) {
-    showResult(`Ошибка: ${err.message}`, true);
+    showResult(`Error: ${err.message}`, true);
   } finally {
     submitBtn.disabled = false;
   }

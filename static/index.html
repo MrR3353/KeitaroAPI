@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Keitaro Campaign Creator</title>
@@ -21,29 +21,29 @@
 </head>
 <body>
 
-<h1>Создать кампанию Keitaro</h1>
+<h1>Create Keitaro Campaign</h1>
 <form id="create-form">
   <div>
-    <label for="name">Название кампании</label><br>
+    <label for="name">Campaign name</label><br>
     <input id="name" name="name" type="text" required placeholder="Summer promo">
   </div>
   <div>
-    <label for="country_code">Гео (ISO код страны, напр. US)</label><br>
+    <label for="country_code">Geo (ISO country code, e.g. US)</label><br>
     <input id="country_code" name="country_code" type="text" required maxlength="2" pattern="[A-Za-z]{2}" placeholder="US">
   </div>
   <div>
-    <label for="offer_id">ID оффера Keitaro</label><br>
+    <label for="offer_id">Keitaro offer ID</label><br>
     <input id="offer_id" name="offer_id" type="number" required placeholder="123">
   </div>
-  <button type="submit" id="submit-btn">Создать кампанию</button>
+  <button type="submit" id="submit-btn">Create campaign</button>
 </form>
 
 <div id="result" style="display:none"></div>
 
-<h2>История созданных кампаний</h2>
+<h2>Created campaigns history</h2>
 <table>
   <thead>
-    <tr><th>ID</th><th>Название</th><th>Гео</th><th>Offer ID</th><th>Создана</th></tr>
+    <tr><th>ID</th><th>Name</th><th>Geo</th><th>Offer ID</th><th>Created</th></tr>
   </thead>
   <tbody id="history-body"></tbody>
 </table>
