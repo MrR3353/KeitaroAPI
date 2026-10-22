@@ -4,6 +4,7 @@ const titleEl = document.getElementById("campaign-title");
 const resultEl = document.getElementById("result");
 const streamsEl = document.getElementById("streams");
 const fetchBtn = document.getElementById("fetch-streams-btn");
+const pushAllBtn = document.getElementById("push-all-btn");
 
 const STATUS_LABELS = {
   active: "Live",
@@ -76,7 +77,12 @@ function render() {
   streamsEl.innerHTML = "";
   campaign.streams
     .slice()
-    .sort((a, b) => a.position - b.position)
+    .sort((a, b) => {
+      const aHasOffers = a.offers.length > 0 ? 0 : 1;
+      const bHasOffers = b.offers.length > 0 ? 0 : 1;
+      if (aHasOffers !== bHasOffers) return aHasOffers - bHasOffers;
+      return a.position - b.position;
+    })
     .forEach((stream) => streamsEl.appendChild(renderStream(stream)));
 }
 
@@ -104,15 +110,6 @@ function renderStream(stream) {
   card.appendChild(table);
 
   card.appendChild(renderAddOfferRow(stream));
-
-  const actions = document.createElement("div");
-  actions.className = "stream-actions";
-  const pushBtn = document.createElement("button");
-  pushBtn.className = "success";
-  pushBtn.textContent = "Push to KT";
-  pushBtn.addEventListener("click", () => pushStream(stream, pushBtn));
-  actions.appendChild(pushBtn);
-  card.appendChild(actions);
 
   return card;
 }
@@ -266,18 +263,34 @@ async function bringBackOffer(offer) {
   }
 }
 
-async function pushStream(stream, button) {
-  button.disabled = true;
+async function pushAll() {
+  const streamsWithChanges = campaign.streams.filter((s) =>
+    s.offers.some((o) => o.status === "pending_add" || o.status === "pending_remove")
+  );
+
+  if (streamsWithChanges.length === 0) {
+    showResult("No pending changes to push.", false);
+    return;
+  }
+
+  pushAllBtn.disabled = true;
+  let pushedCount = 0;
   try {
-    const updatedStream = await api(`/api/streams/${stream.id}/push`, { method: "POST" });
-    replaceStream(updatedStream);
-    showResult(`Stream "${stream.name}" pushed to Keitaro.`, false);
+    for (const stream of streamsWithChanges) {
+      const updatedStream = await api(`/api/streams/${stream.id}/push`, { method: "POST" });
+      const idx = campaign.streams.findIndex((s) => s.id === updatedStream.id);
+      if (idx !== -1) campaign.streams[idx] = updatedStream;
+      pushedCount += 1;
+    }
+    showResult(`Pushed changes for ${pushedCount} stream(s) to Keitaro.`, false);
   } catch (err) {
-    showResult(`Error: ${err.message}`, true);
+    showResult(`Error after pushing ${pushedCount}/${streamsWithChanges.length} stream(s): ${err.message}`, true);
   } finally {
-    button.disabled = false;
+    render();
+    pushAllBtn.disabled = false;
   }
 }
 
 fetchBtn.addEventListener("click", fetchStreams);
+pushAllBtn.addEventListener("click", pushAll);
 loadCampaign().catch((err) => showResult(`Error: ${err.message}`, true));
